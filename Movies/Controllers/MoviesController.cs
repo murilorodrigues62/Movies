@@ -57,11 +57,14 @@ namespace Movies.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Create([Bind(Include = "Id,Title,ReleaseDate,Director")] Movie movie)
         {
+
+            // Validate the Id
+            if (!PkValidate(movie))
+                ModelState.AddModelError("Id", "There is another movie with the same id");
+
             // Validate the movie
-            if (!MovieValidate(movie))
-            {
-                ModelState.AddModelError("Title", "There is another movie with the same title and director");
-            }
+            if (!MovieValidate(movie))            
+                ModelState.AddModelError("Title", "There is another movie with the same title and director");            
 
             if (ModelState.IsValid)
             {
@@ -146,15 +149,25 @@ namespace Movies.Controllers
             base.Dispose(disposing);
         }
         
-        // Function to validate de title and director of the movie
+        // Function to validate title and director of the movie
         private bool MovieValidate(Movie movie)
         {
             // Count movies with the same title and director and different Id
-            int movies = db.Movies.Where(t => t.Title == movie.Title)
-                                  .Where(d => d.Director == movie.Director)
+            int movies = db.Movies.Where(t => t.Title.ToLower() == movie.Title.ToLower())
+                                  .Where(d => d.Director.ToLower() == movie.Director.ToLower())
                                   .Where(i => i.Id != movie.Id)
                                   .Count();
             // Return true if there is no duplicate movie
+            return movies == 0;
+        }
+
+        // Function to validate PK
+        private bool PkValidate(Movie movie)
+        {
+            // Count movies with the same Id
+            int movies = db.Movies.Where(i => i.Id == movie.Id)
+                                  .Count();
+            // Return true if there is no duplicate Id
             return movies == 0;
         }
     }
